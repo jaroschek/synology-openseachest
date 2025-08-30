@@ -92,7 +92,7 @@ jobs:
       run: |
         cd /toolkit/pkgscripts-ng
         sudo ./PkgCreate.py -v ${{ matrix.dsm }} -p ${{ matrix.arch }} -c openSeaChest
-        sudo rm /toolkit/**/*._debug.spk
+        sudo rm /toolkit/result_spk/*/*_debug.spk
 
     - name: Create release
       id: create_release
