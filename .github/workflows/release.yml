@@ -82,6 +82,7 @@ jobs:
 
     - name: Prepare package
       run: |
+        ls -al
         sed -i -e 's/^version=".*"/version="${{ needs.check.outputs.openseachest_release }}"/g' openSeaChest/INFO.sh
         mkdir openSeaChest/package
         for file in openSeaChest*.tar.xz; do
@@ -91,7 +92,9 @@ jobs:
           mv source/*/openSeaChest_* openSeaChest/package/
           rm -fr source
         done;
+        ls -al openSeaChest
         sudo mv openSeaChest /toolkit/source/
+        sudo ls -al /toolkit/source/
 
     - name: Build Package
       run: |
