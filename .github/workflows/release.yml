@@ -1,0 +1,112 @@
+name: Check for new release of Seagate openSeaChest and create new release of Synology package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    outputs:
+      package_release: ${{ steps.package_latest.outputs.release }}
+      openseachest_release: ${{ steps.openseachest_latest.outputs.release }}
+
+    steps:
+      - name: Get latest package release
+        id: package_latest
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          owner: jaroschek
+          repo: synology-openseachest
+          excludes: prerelease, draft
+
+      - name: Get latest openSeaChest release
+        id: openseachest_latest
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          owner: seagate
+          repo: openseachest
+          excludes: prerelease, draft
+
+  release:
+    needs: check
+    if: "${{ needs.check.outputs.package_release != needs.check.outputs.openseachest_release }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ['kvmx64']
+        dsm: ['7.2']
+
+    steps:
+
+    - name: Set up build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y \
+          build-essential \
+          cifs-utils \
+          git \
+          python3 \
+          python3-pip
+
+    - name: Create toolkit directory structure
+      run: |
+        sudo mkdir /toolkit
+        sudo cd /toolkit
+        sudo git clone https://github.com/SynologyOpenSource/pkgscripts-ng
+        sudo cd pkgscripts-ng
+        sudo git checkout DSM${{ matrix.dsm }}
+
+    - name: Deploy Synology build environment
+      run: |
+        sudo cd /toolkit/pkgscripts-ng
+        sudo ./EnvDeploy -v ${{ matrix.dsm }} -p ${{ matrix.arch }}
+
+    - uses: actions/cache@v4
+      with:
+        path: /toolkit
+        key: toolkit-${{ matrix.dsm }}-${{ matrix.arch }}
+
+    - name: Download binaries for x86_64
+      uses: robinraju/release-downloader@v1
+      with:
+        repository: 'seagate/openseachest'
+        tag: ${{ needs.check.outputs.openseachest_release }}
+        fileName: 'openSeaChest*linux-x86_64-portable.tar.xz'
+
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        path: openSeaChest
+
+    - name: Prepare package
+      run: |
+        sed -i -e 's/^version=".*"/version="${{ needs.check.outputs.openseachest_release }}"/g' openSeaChest/INFO.sh
+        mkdir openSeaChest/package
+        for file in openSeaChest*.tar.xz; do
+          mkdir -p source
+          tar -xvf $file -C source
+          rm $file
+          mv source/*/openSeaChest_* openSeaChest/package/
+          rm -fr source
+        done;
+        sudo mv openSeaChest /toolkit/source/
+
+    - name: Build Package
+      run: |
+        sudo cd /toolkit/pkgscripts-ng
+        ./PkgCreate.py -v ${{ matrix.dsm }} -p ${{ matrix.arch }} -c openSeaChest
+
+    - name: Create release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: /toolkit/**/*.spk
+        tag_name: ${{ needs.check.outputs.openseachest_release }}
+        name: Release ${{ needs.check.outputs.openseachest_release }}
+        body: |
+          Changes in this Release
+          - Updates openSeaChest binaries to version ${{ needs.check.outputs.openseachest_release }}
+        draft: false
+        prerelease: false
