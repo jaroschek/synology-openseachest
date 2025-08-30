@@ -78,6 +78,7 @@ jobs:
     - name: Prepare package
       run: |
         sed -i -e 's/^version=".*"/version="${{ needs.check.outputs.openseachest_release }}"/g' openSeaChest/INFO.sh
+        sed -i -e 's/^version="v/version="/g' openSeaChest/INFO.sh
         mkdir openSeaChest/package
         for file in openSeaChest*.tar.xz; do
           mkdir -p source
