@@ -52,7 +52,7 @@ jobs:
 
     - name: Create toolkit directory structure
       run: |
-        sudo mkdir /toolkit
+        sudo mkdir -p /toolkit/source/openSeaChest
         cd /toolkit
         sudo git clone https://github.com/SynologyOpenSource/pkgscripts-ng
         cd pkgscripts-ng
@@ -62,11 +62,6 @@ jobs:
       run: |
         cd /toolkit/pkgscripts-ng
         sudo ./EnvDeploy -v ${{ matrix.dsm }} -p ${{ matrix.arch }}
-
-    - uses: actions/cache@v4
-      with:
-        path: /toolkit
-        key: toolkit-${{ matrix.dsm }}-${{ matrix.arch }}
 
     - name: Download binaries for x86_64
       uses: robinraju/release-downloader@v1
@@ -82,7 +77,6 @@ jobs:
 
     - name: Prepare package
       run: |
-        ls -al
         sed -i -e 's/^version=".*"/version="${{ needs.check.outputs.openseachest_release }}"/g' openSeaChest/INFO.sh
         mkdir openSeaChest/package
         for file in openSeaChest*.tar.xz; do
@@ -92,9 +86,7 @@ jobs:
           mv source/*/openSeaChest_* openSeaChest/package/
           rm -fr source
         done;
-        ls -al openSeaChest
-        sudo mv openSeaChest /toolkit/source/
-        sudo ls -al /toolkit/source/
+        sudo mv openSeaChest/* /toolkit/source/openSeaChest/
 
     - name: Build Package
       run: |
