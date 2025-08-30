@@ -53,14 +53,14 @@ jobs:
     - name: Create toolkit directory structure
       run: |
         sudo mkdir /toolkit
-        sudo cd /toolkit
+        cd /toolkit
         sudo git clone https://github.com/SynologyOpenSource/pkgscripts-ng
-        sudo cd pkgscripts-ng
+        cd pkgscripts-ng
         sudo git checkout DSM${{ matrix.dsm }}
 
     - name: Deploy Synology build environment
       run: |
-        sudo cd /toolkit/pkgscripts-ng
+        cd /toolkit/pkgscripts-ng
         sudo ./EnvDeploy -v ${{ matrix.dsm }} -p ${{ matrix.arch }}
 
     - uses: actions/cache@v4
@@ -95,8 +95,8 @@ jobs:
 
     - name: Build Package
       run: |
-        sudo cd /toolkit/pkgscripts-ng
-        ./PkgCreate.py -v ${{ matrix.dsm }} -p ${{ matrix.arch }} -c openSeaChest
+        cd /toolkit/pkgscripts-ng
+        sudo ./PkgCreate.py -v ${{ matrix.dsm }} -p ${{ matrix.arch }} -c openSeaChest
 
     - name: Create release
       id: create_release
