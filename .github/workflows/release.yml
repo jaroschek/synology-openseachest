@@ -110,6 +110,6 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         file_glob: true
-        file: /toolkit/**/*.spk
+        file: /toolkit/result_spk/*/*.spk
         tag: ${{ needs.check.outputs.openseachest_release }}
         overwrite: true
