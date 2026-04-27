@@ -42,6 +42,13 @@ jobs:
 
     steps:
 
+    - name: Download binaries for x86_64
+      uses: robinraju/release-downloader@v1
+      with:
+        repository: 'seagate/openseachest'
+        tag: ${{ needs.check.outputs.openseachest_release }}
+        fileName: 'openSeaChest*linux-x86_64-portable.tar.xz'
+
     - name: Set up build environment
       run: |
         sudo apt-get update
@@ -65,13 +72,6 @@ jobs:
       run: |
         cd /toolkit/pkgscripts-ng
         sudo ./EnvDeploy -v ${{ matrix.dsm }} -p ${{ matrix.arch }}
-
-    - name: Download binaries for x86_64
-      uses: robinraju/release-downloader@v1
-      with:
-        repository: 'seagate/openseachest'
-        tag: ${{ needs.check.outputs.openseachest_release }}
-        fileName: 'openSeaChest*linux-x86_64-portable.tar.xz'
 
     - name: Checkout repo
       uses: actions/checkout@v6
