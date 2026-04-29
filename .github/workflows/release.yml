@@ -47,7 +47,7 @@ jobs:
       with:
         repository: 'seagate/openseachest'
         tag: ${{ needs.check.outputs.openseachest_release }}
-        fileName: 'openSeaChest*linux-x86_64-portable.tar.xz'
+        fileName: '*linux-x86_64-portable*'
 
     - name: Set up build environment
       run: |
@@ -68,11 +68,6 @@ jobs:
         cd pkgscripts-ng
         sudo git checkout DSM${{ matrix.dsm }}
 
-    - name: Deploy Synology build environment
-      run: |
-        cd /toolkit/pkgscripts-ng
-        sudo ./EnvDeploy -v ${{ matrix.dsm }} -p ${{ matrix.arch }}
-
     - name: Checkout repo
       uses: actions/checkout@v6
       with:
@@ -83,6 +78,10 @@ jobs:
         sed -i -e 's/^version=".*"/version="${{ needs.check.outputs.openseachest_release }}"/g' openSeaChest/INFO.sh
         sed -i -e 's/^version="v/version="/g' openSeaChest/INFO.sh
         mkdir openSeaChest/package
+        if [ -f linux-x86_64-portable.zip ]; then
+          unzip linux-x86_64-portable.zip
+          rm linux-x86_64-portable.zip
+        fi
         for file in openSeaChest*.tar.xz; do
           mkdir -p source
           tar -xvf $file -C source
@@ -93,6 +92,11 @@ jobs:
         ls openSeaChest/package/ | jq -R -s '{"usr-local-linker":{"bin": split("\n")[:-1]}}' > openSeaChest/conf/resource
         sudo mv openSeaChest/* /toolkit/source/openSeaChest/
 
+    - name: Deploy Synology build environment
+      run: |
+        cd /toolkit/pkgscripts-ng
+        sudo ./EnvDeploy -v ${{ matrix.dsm }} -p ${{ matrix.arch }}
+  
     - name: Build Package
       run: |
         cd /toolkit/pkgscripts-ng
